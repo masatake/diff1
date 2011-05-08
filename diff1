@@ -1,0 +1,182 @@
+#!/bin/bash
+#
+########################################################################
+#
+# diff1: Taking diff between a given file with something its original
+#
+# Copyright (C) 2011 Masatake YAMATO
+#
+# Author: Masatake YAMATO <yamato@redhat.com>
+#
+# program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+#
+__backends=rpm
+backend=rpm
+__files=
+__cache_dir=
+diff_flags=-uN
+action=diff
+
+function print_usage
+{
+    echo "Usage: "
+    echo "	$0 --help|-h"
+    echo "	$0 FILE"
+    echo "Example: "
+    echo "	$0 /etc/passwd"
+    echo
+}
+
+function parse_arguments
+{
+    while [ $# -gt 0 ]; do
+	case "$1" in
+	    -h|--help)
+		print_usage
+		exit 0
+		;;
+	    -*)
+		diff_flags="$diff_flags $1"
+		;;
+	    *)
+		break
+		;;
+	esac
+	shift
+    done
+
+    __files="$@"
+    if [ -z "$__files" ]; then
+	echo "No file given" 1>&2
+	print_usage 1>&2
+	exit 2
+    fi
+
+    local f
+    for f in $__files; do
+	if ! [ -e $f ]; then
+	    echo "No such file: $f" 1>&2
+	    exit 2
+	fi
+	if ! [ -f $f ]; then
+	    echo "Not regular file: $f" 1>&2
+	    exit 2
+	fi
+	if ! [ -r $f ]; then
+	    echo "Not readable: $f" 1>&2
+	    exit 2
+	fi
+    done
+}
+
+function rpm_prepare_cache
+{
+    local pkg=$1
+
+    if [ -r $__cache_dir/rpm/${pkg}.rpm ]; then
+	return 0
+    else
+	yumdownloader --destdir $__cache_dir/rpm $pkg
+	return $?
+    fi
+
+} > /dev/null 2>&1
+
+function rpm_diff1
+{
+    local file
+    local pkg
+    local pkg_file
+    local status
+    local temp
+    
+    if ! file=$(readlink -f $1); then
+	echo "failed in readlink $1" 1>&2
+	return 2
+    fi
+
+    if ! pkg=$(rpm -qf $file); then
+	echo "rpm does not manage $f" 1>&2
+	return 2
+    fi
+
+    if ! rpm_prepare_cache $pkg ; then
+	echo "failed in download $pkg" 1>&2
+	return 2
+    fi
+
+    pkg_file=$__cache_dir/rpm/${pkg}.rpm
+
+    if ! temp=$(mktemp --directory --suffix=-rdiff1); then
+	echo "failed in mktemp" 1>&2
+	return 2
+    fi
+
+    if ! rpm2cpio $pkg_file | ( cd $temp; cpio -dim ) > /dev/null 2>&1; then
+	echo "failed in rpm2cpio/cpio" 1>&2
+	return 2
+    fi
+
+    if ! [ -f $temp/$file ]; then
+	echo "cannot find $f in rpm archive" 1>&2
+	return 2
+    fi
+
+    diff ${diff_flags} $temp/$file $file 
+    status=$?
+
+    rm -rf $temp
+    
+    return $status
+}
+
+function rpm_prepare_cache_dir
+{
+    mkdir -p $__cache_dir/rpm
+}
+
+function prepare_cache_dir
+{
+    mkdir -p ~/.rdiff1_cache
+    __cache_dir=~/.rdiff1_cache/$backend
+    mkdir -p $__cache_dir
+    ${backend}_prepare_cache_dir $__cache_dir
+}
+
+function main
+{
+    local f
+    local s
+    local d=0
+
+    parse_arguments "$@"
+
+    prepare_cache_dir
+    
+    for f in $__files; do
+	${backend}_diff1 $f
+	s=$?
+	if [ $s = 2 ];then
+	    return 2
+	else 
+	    d=1
+	fi
+    done
+    return $d
+}
+
+main "$@"
+exit $?

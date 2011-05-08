@@ -1,0 +1,8 @@
+(name "diff1")
+(version "0.0.0")
+(require "rpm")
+(require "yum-utils")
+(require "coreutils")
+(require "diffutils")
+(entry "diff1" "/usr/bin/diff1" #f)
+
