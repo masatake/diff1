@@ -23,9 +23,9 @@
 #
 ########################################################################
 #
-__backends=rpm
-backend=rpm
-__files=
+__pkg_backends=rpm
+pkg_backend=rpm
+_file=
 __cache_dir=
 diff_flags=-uN
 action=diff
@@ -58,28 +58,30 @@ function parse_arguments
 	shift
     done
 
-    __files="$@"
-    if [ -z "$__files" ]; then
-	echo "No file given" 1>&2
+    if [ $# = 0 ]; then
+	echo "$0: missing file" 1>&2
 	print_usage 1>&2
 	exit 2
+    elif [ $# != 1 ]; then
+	echo "$0: too many files" 1>&2
+	exit 1
     fi
-
-    local f
-    for f in $__files; do
-	if ! [ -e $f ]; then
-	    echo "No such file: $f" 1>&2
-	    exit 2
-	fi
-	if ! [ -f $f ]; then
-	    echo "Not regular file: $f" 1>&2
-	    exit 2
-	fi
-	if ! [ -r $f ]; then
-	    echo "Not readable: $f" 1>&2
-	    exit 2
-	fi
-    done
+    
+    _file=$1
+    shift
+    
+    if ! [ -e $_file ]; then
+	echo "$0: no such file: $f" 1>&2
+	exit 2
+    fi
+    if ! [ -f $_file ]; then
+	echo "$0: not a regular file: $f" 1>&2
+	exit 2
+    fi
+    if ! [ -r $_file ]; then
+	echo "$0: no readable: $f" 1>&2
+	exit 2
+    fi
 }
 
 function rpm_prepare_cache
@@ -104,24 +106,24 @@ function rpm_diff1
     local temp
     
     if ! file=$(readlink -f $1); then
-	echo "failed in readlink $1" 1>&2
+	echo "$0: failed in readlink $1" 1>&2
 	return 2
     fi
 
     if ! pkg=$(rpm -qf $file); then
-	echo "rpm does not manage $f" 1>&2
+	echo "$0: rpm does not manage $f" 1>&2
 	return 2
     fi
 
     if ! rpm_prepare_cache $pkg ; then
-	echo "failed in download $pkg" 1>&2
+	echo "$0: failed in download $pkg" 1>&2
 	return 2
     fi
 
     pkg_file=$__cache_dir/rpm/${pkg}.rpm
 
     if ! temp=$(mktemp --directory --suffix=-rdiff1); then
-	echo "failed in mktemp" 1>&2
+	echo "$0 failed in mktemp" 1>&2
 	return 2
     fi
 
@@ -151,9 +153,9 @@ function rpm_prepare_cache_dir
 function prepare_cache_dir
 {
     mkdir -p ~/.rdiff1_cache
-    __cache_dir=~/.rdiff1_cache/$backend
+    __cache_dir=~/.rdiff1_cache/$pkg_backend
     mkdir -p $__cache_dir
-    ${backend}_prepare_cache_dir $__cache_dir
+    ${pkg_backend}_prepare_cache_dir $__cache_dir
 }
 
 function main
@@ -166,16 +168,8 @@ function main
 
     prepare_cache_dir
     
-    for f in $__files; do
-	${backend}_diff1 $f
-	s=$?
-	if [ $s = 2 ];then
-	    return 2
-	else 
-	    d=1
-	fi
-    done
-    return $d
+    ${pkg_backend}_diff1 $f
+    return $?
 }
 
 main "$@"
