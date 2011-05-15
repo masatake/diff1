@@ -71,15 +71,15 @@ function parse_arguments
     shift
     
     if ! [ -e $_file ]; then
-	echo "$0: no such file: $f" 1>&2
+	echo "$0: no such file: $_file" 1>&2
 	exit 2
     fi
     if ! [ -f $_file ]; then
-	echo "$0: not a regular file: $f" 1>&2
+	echo "$0: not a regular file: $_file" 1>&2
 	exit 2
     fi
     if ! [ -r $_file ]; then
-	echo "$0: no readable: $f" 1>&2
+	echo "$0: no readable: $_file" 1>&2
 	exit 2
     fi
 }
@@ -99,19 +99,19 @@ function rpm_prepare_cache
 
 function rpm_diff1
 {
-    local file
+    local file=$1
     local pkg
     local pkg_file
     local status
     local temp
     
-    if ! file=$(readlink -f $1); then
+    if ! file=$(readlink -f $file); then
 	echo "$0: failed in readlink $1" 1>&2
 	return 2
     fi
 
     if ! pkg=$(rpm -qf $file); then
-	echo "$0: rpm does not manage $f" 1>&2
+	echo "$0: rpm does not manage $file" 1>&2
 	return 2
     fi
 
@@ -133,7 +133,7 @@ function rpm_diff1
     fi
 
     if ! [ -f $temp/$file ]; then
-	echo "cannot find $f in rpm archive" 1>&2
+	echo "cannot find $file in rpm archive($pkg_file)" 1>&2
 	return 2
     fi
 
@@ -160,15 +160,11 @@ function prepare_cache_dir
 
 function main
 {
-    local f
-    local s
-    local d=0
-
     parse_arguments "$@"
 
     prepare_cache_dir
     
-    ${pkg_backend}_diff1 $f
+    ${pkg_backend}_diff1 $_file
     return $?
 }
 
