@@ -4,5 +4,5 @@
 (ypack-require "yum-utils")
 (ypack-require "coreutils")
 (ypack-require "diffutils")
-(entry "diff1" "/usr/bin/diff1")
+(ypack-entry "diff1" "/usr/bin/diff1")
 
