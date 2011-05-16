@@ -22,19 +22,27 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ########################################################################
-#
+
 __pkg_backends=rpm
 pkg_backend=rpm
+__reporters=diff
+reporter=diff
+
 _file=
 __cache_dir=
-diff_flags=-uN
-action=diff
+
+diff_flags=
+
+yumdownloader_flags=
+rpm_ignore_vr=
+rpm_file=
 
 function print_usage
 {
     echo "Usage: "
     echo "	$0 --help|-h"
-    echo "	$0 FILE"
+    echo "	$0 [--yumdownloader-flags=YUMDOWNLOADER_FLAGS] [--diff-flags=DIFF_FLAGS] \\"
+    echo "         [--rpm-ignore-vr] [--rpm-file=RPM_FILE] FILE"
     echo "Example: "
     echo "	$0 /etc/passwd"
     echo
@@ -42,14 +50,32 @@ function print_usage
 
 function parse_arguments
 {
+    local df
+    local ydf
+
     while [ $# -gt 0 ]; do
 	case "$1" in
 	    -h|--help)
 		print_usage
 		exit 0
 		;;
-	    -*)
-		diff_flags="$diff_flags $1"
+	    --rpm-ignore-vr)
+		rpm_ignore_vr=yes
+		;;
+	    --rpm-file=*)
+	        rpm_file=${1/--rpm-file=/}
+		if ! [ -f "$rpm_file" ]; then
+		    echo "$0: not a regular file: $rpm_file" 1>&2
+		    exit 2
+		fi
+		;;
+	    --diff-flags=*)
+	        df=${1/--diff-flags=/}
+		diff_flags="${diff_flags} ${df}"
+		;;
+	    --yumdownloader-flags=*)
+	        ydf=${1/--yumdownloader-flags=/}
+		yumdownloader_flags="${yumdownloader_flags} ${ydf}"
 		;;
 	    *)
 		break
@@ -64,7 +90,7 @@ function parse_arguments
 	exit 2
     elif [ $# != 1 ]; then
 	echo "$0: too many files" 1>&2
-	exit 1
+	exit 2
     fi
     
     _file=$1
@@ -82,8 +108,35 @@ function parse_arguments
 	echo "$0: no readable: $_file" 1>&2
 	exit 2
     fi
+
+    if [ -z "$diff_flags" ]; then
+	diff_flags=-uN
+    fi
 }
 
+function prepare_cache_dir
+{
+    mkdir -p ~/.diff1_cache
+    __cache_dir=~/.diff1_cache/$pkg_backend
+    mkdir -p $__cache_dir
+    ${pkg_backend}_prepare_cache_dir $__cache_dir
+}
+
+function main
+{
+    parse_arguments "$@"
+
+    prepare_cache_dir
+    
+    ${pkg_backend}_diff1 $_file
+    return $?
+}
+
+#
+# RPM
+# TODO: Package name only
+#       Given rpm file
+# 
 function rpm_prepare_cache
 {
     local pkg=$1
@@ -91,38 +144,21 @@ function rpm_prepare_cache
     if [ -r $__cache_dir/rpm/${pkg}.rpm ]; then
 	return 0
     else
-	yumdownloader --destdir $__cache_dir/rpm $pkg
+	yumdownloader ${yumdownloader_flags} --destdir $__cache_dir/rpm $pkg
 	return $?
     fi
 
 } > /dev/null 2>&1
 
-function rpm_diff1
+function rpm_report_diff
 {
-    local file=$1
-    local pkg
-    local pkg_file
-    local status
+    local pkg_file=$1
+    local file=$2
     local temp
-    
-    if ! file=$(readlink -f $file); then
-	echo "$0: failed in readlink $1" 1>&2
-	return 2
-    fi
+    local status
 
-    if ! pkg=$(rpm -qf $file); then
-	echo "$0: rpm does not manage $file" 1>&2
-	return 2
-    fi
 
-    if ! rpm_prepare_cache $pkg ; then
-	echo "$0: failed in download $pkg" 1>&2
-	return 2
-    fi
-
-    pkg_file=$__cache_dir/rpm/${pkg}.rpm
-
-    if ! temp=$(mktemp --directory --suffix=-rdiff1); then
+    if ! temp=$(mktemp --directory --suffix=-diff1-rpm); then
 	echo "$0 failed in mktemp" 1>&2
 	return 2
     fi
@@ -137,12 +173,91 @@ function rpm_diff1
 	return 2
     fi
 
+    echo " # diff ${diff_flags} $temp/$file $file "
     diff ${diff_flags} $temp/$file $file 
     status=$?
+    if [ $status = 0 ]; then
+	echo " # NO CHANGE in $file"
+    fi
 
     rm -rf $temp
-    
     return $status
+}
+
+function rpm_resolve_pkg
+{
+    local pkg_name=$1
+    local output=
+
+    if ! output=$(yumdownloader ${yumdownloader_flags} 
+	    --quiet
+	    --urls $pkg_name 2> /dev/null); then
+	return 2
+    fi
+
+    basename $output .rpm
+}
+
+function rpm_retrieve_pkg
+{
+    local file=$1
+    local ignore_vr=$2
+    local pkg
+    local pkg_name
+
+    if ! file=$(readlink -f $file); then
+	echo "$0: failed in readlink $1" 1>&2
+	return 2
+    fi
+
+    if ! pkg=$(rpm -qf $file); then
+	echo "$0: rpm does not manage $file" 1>&2
+	return 2
+    fi
+
+
+    if rpm_prepare_cache $pkg ; then
+	echo $__cache_dir/rpm/${pkg}.rpm
+	return 0
+    elif [ "${ignore_vr}" = yes ]; then
+	if ! pkg_name=$(rpm -q --qf "%{name}" $pkg); then
+	    echo "$0: cannot get the name of package: $pkg" 1>&2
+	    return 2
+	fi
+	
+	if ! pkg=$(rpm_resolve_pkg ${pkg_name}) ; then
+	    echo "$0: cannot get package nvr for: $pkg_name" 1>&2
+	    return 2
+	fi
+
+	if rpm_prepare_cache $pkg; then
+	    echo $__cache_dir/rpm/${pkg}.rpm
+	    return 0
+	else
+	    echo "$0: failed in download $pkg" 1>&2
+	    return 2
+	fi
+    else
+	echo "$0: failed in download $pkg" 1>&2
+	return 2
+    fi
+}
+
+function rpm_diff1
+{
+    local file=$1
+    local pkg_file
+
+    if [ -n "${rpm_file}" ]; then
+	pkg_file=${rpm_file}
+    else
+	if ! pkg_file=$(rpm_retrieve_pkg $file $rpm_ignore_vr); then
+	    return $?
+	fi
+    fi
+    rpm_report_${reporter} $pkg_file $file
+    
+    return $?
 }
 
 function rpm_prepare_cache_dir
@@ -150,23 +265,7 @@ function rpm_prepare_cache_dir
     mkdir -p $__cache_dir/rpm
 }
 
-function prepare_cache_dir
-{
-    mkdir -p ~/.rdiff1_cache
-    __cache_dir=~/.rdiff1_cache/$pkg_backend
-    mkdir -p $__cache_dir
-    ${pkg_backend}_prepare_cache_dir $__cache_dir
-}
 
-function main
-{
-    parse_arguments "$@"
-
-    prepare_cache_dir
-    
-    ${pkg_backend}_diff1 $_file
-    return $?
-}
 
 main "$@"
 exit $?
