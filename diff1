@@ -24,35 +24,39 @@
 ########################################################################
 
 __pkg_backends=rpm
-pkg_backend=rpm
 __reporters=diff
-reporter=diff
-
-_file=
 __cache_dir=
 
-diff_flags=
+_data_file=
+_path=
 
+pkg_backend=rpm
+reporter=diff
+diff_flags=
 yumdownloader_flags=
 rpm_ignore_vr=
 rpm_file=
+root_dir=
+
 
 function print_usage
 {
     echo "Usage: "
     echo "	$0 --help|-h"
     echo "	$0 [--yumdownloader-flags=YUMDOWNLOADER_FLAGS] [--diff-flags=DIFF_FLAGS] \\"
-    echo "         [--rpm-ignore-vr] [--rpm-file=RPM_FILE] FILE"
+    echo "         [--rpm-ignore-vr] [--rpm-file=RPM_FILE] [--as-path=PATH|--root-dir=ROOT] DATA_FILE"
     echo "Example: "
     echo "	$0 /etc/passwd"
-    echo
+    echo "	$0 --root-dir=/home/yamato/work/named /home/yamato/work/named/etc/named.conf"
+    echo "	$0 --as-path=/etc/passwd /home/yamato/work/setup/my-passwd"
 }
 
 function parse_arguments
 {
     local df
     local ydf
-
+    local path
+    
     while [ $# -gt 0 ]; do
 	case "$1" in
 	    -h|--help)
@@ -77,6 +81,20 @@ function parse_arguments
 	        ydf=${1/--yumdownloader-flags=/}
 		yumdownloader_flags="${yumdownloader_flags} ${ydf}"
 		;;
+	    --root-dir=*)
+	        root_dir=${1/--root-dir=/}
+		if ! [ -d "${root_dir}" ]; then
+		    echo "$0: No such directory: ${root_dir}" 1>&2
+		    exit 2
+		fi
+		;;
+	    --as-path=*)
+	        path=${1/--as-path=/}
+		if ! [ -f "$path" ]; then
+		    echo "$0: no file for $path" 1>&2
+		    exit 2
+		fi
+		;;
 	    *)
 		break
 		;;
@@ -92,25 +110,48 @@ function parse_arguments
 	echo "$0: too many files" 1>&2
 	exit 2
     fi
-    
-    _file=$1
+
+    if [ -n "${root_dir}" ] && [ -n "${path}" ]; then
+	echo "Specify ether --root-dir= o --as-path= at once" 1>&2
+	print_usage 1>&2
+	exit 2
+    fi
+
+    _data_file=$1
+    _path="$_data_file"
     shift
     
-    if ! [ -e $_file ]; then
-	echo "$0: no such file: $_file" 1>&2
+    if ! [ -e $_data_file ]; then
+	echo "$0: no such file: $_data_file" 1>&2
 	exit 2
     fi
-    if ! [ -f $_file ]; then
-	echo "$0: not a regular file: $_file" 1>&2
+    if ! [ -f $_data_file ]; then
+	echo "$0: not a regular file: $_data_file" 1>&2
 	exit 2
     fi
-    if ! [ -r $_file ]; then
-	echo "$0: no readable: $_file" 1>&2
+    if ! [ -r $_data_file ]; then
+	echo "$0: no readable: $_data_file" 1>&2
 	exit 2
     fi
 
     if [ -z "$diff_flags" ]; then
 	diff_flags=-uN
+    fi
+
+    if [ -n "${path}" ]; then
+	_path=${path}
+    elif [ -n "${root_dir}" ]; then
+	local prefix=${_data_file:0:${#root_dir}}
+	if [ "$prefix" != "${root_dir}" ]; then
+	    echo "$0: DATA-FILE(${_data_file}) is not at somewhere under ROOT(${root_dir})" 1>&2
+	    exit 2
+	fi
+	path=${_data_file:${#root_dir}}
+	if ! [ -f "$path" ]; then
+	    echo "$0: no such file: $path derived from ROOT(${root_dir} and DATA-FILE(${_data_file})" 1>&2
+	    exit 2
+	fi
+	_path=${path}
     fi
 }
 
@@ -128,7 +169,7 @@ function main
 
     prepare_cache_dir
     
-    ${pkg_backend}_diff1 $_file
+    ${pkg_backend}_diff1 $_data_file $_path
     return $?
 }
 
@@ -154,6 +195,7 @@ function rpm_report_diff
 {
     local pkg_file=$1
     local file=$2
+    local path=$3
     local temp
     local status
 
@@ -168,16 +210,20 @@ function rpm_report_diff
 	return 2
     fi
 
-    if ! [ -f $temp/$file ]; then
+    if ! [ -f $temp/$path ]; then
 	echo "cannot find $file in rpm archive($pkg_file)" 1>&2
 	return 2
     fi
 
-    echo " # diff ${diff_flags} $temp/$file $file "
-    diff ${diff_flags} $temp/$file $file 
+    echo " # diff ${diff_flags} $temp/$path $file "
+    diff ${diff_flags} $temp/$path $file 
     status=$?
     if [ $status = 0 ]; then
-	echo " # NO CHANGE in $file"
+	if [ "${path}" = "${file}" ]; then
+	    echo " # NO CHANGE in $file"
+	else
+	    echo " # NO CHANGE in $path -> $file"
+	fi
     fi
 
     rm -rf $temp
@@ -246,16 +292,17 @@ function rpm_retrieve_pkg
 function rpm_diff1
 {
     local file=$1
+    local path=$2
     local pkg_file
 
     if [ -n "${rpm_file}" ]; then
 	pkg_file=${rpm_file}
     else
-	if ! pkg_file=$(rpm_retrieve_pkg $file $rpm_ignore_vr); then
+	if ! pkg_file=$(rpm_retrieve_pkg $path $rpm_ignore_vr); then
 	    return $?
 	fi
     fi
-    rpm_report_${reporter} $pkg_file $file
+    rpm_report_${reporter} $pkg_file $file $path
     
     return $?
 }
