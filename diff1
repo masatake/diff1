@@ -36,7 +36,7 @@ diff_flags=
 yumdownloader_flags=
 rpm_ignore_vr=
 rpm_file=
-root_dir=
+root=
 
 
 function print_usage
@@ -44,11 +44,11 @@ function print_usage
     echo "Usage: "
     echo "	$0 --help|-h"
     echo "	$0 [--yumdownloader-flags=YUMDOWNLOADER_FLAGS] [--diff-flags=DIFF_FLAGS] \\"
-    echo "         [--rpm-ignore-vr] [--rpm-file=RPM_FILE] [--as-path=PATH|--root-dir=ROOT] DATA_FILE"
+    echo "         [--rpm-ignore-vr] [--rpm-file=RPM_FILE] [--path=PATH|--root=ROOT] DATA_FILE"
     echo "Example: "
     echo "	$0 /etc/passwd"
-    echo "	$0 --root-dir=/home/yamato/work/named /home/yamato/work/named/etc/named.conf"
-    echo "	$0 --as-path=/etc/passwd /home/yamato/work/setup/my-passwd"
+    echo "	$0 --root=/home/yamato/work/named /home/yamato/work/named/etc/named.conf"
+    echo "	$0 --path=/etc/passwd /home/yamato/work/setup/my-passwd"
 }
 
 function parse_arguments
@@ -81,15 +81,15 @@ function parse_arguments
 	        ydf=${1/--yumdownloader-flags=/}
 		yumdownloader_flags="${yumdownloader_flags} ${ydf}"
 		;;
-	    --root-dir=*)
-	        root_dir=${1/--root-dir=/}
-		if ! [ -d "${root_dir}" ]; then
-		    echo "$0: No such directory: ${root_dir}" 1>&2
+	    --root=*)
+	        root=${1/--root=/}
+		if ! [ -d "${root}" ]; then
+		    echo "$0: No such directory: ${root}" 1>&2
 		    exit 2
 		fi
 		;;
-	    --as-path=*)
-	        path=${1/--as-path=/}
+	    --path=*)
+	        path=${1/--path=/}
 		if ! [ -f "$path" ]; then
 		    echo "$0: no file for $path" 1>&2
 		    exit 2
@@ -111,8 +111,8 @@ function parse_arguments
 	exit 2
     fi
 
-    if [ -n "${root_dir}" ] && [ -n "${path}" ]; then
-	echo "Specify ether --root-dir= o --as-path= at once" 1>&2
+    if [ -n "${root}" ] && [ -n "${path}" ]; then
+	echo "Specify ether --root= or --path= at once" 1>&2
 	print_usage 1>&2
 	exit 2
     fi
@@ -140,15 +140,15 @@ function parse_arguments
 
     if [ -n "${path}" ]; then
 	_path=${path}
-    elif [ -n "${root_dir}" ]; then
-	local prefix=${_data_file:0:${#root_dir}}
-	if [ "$prefix" != "${root_dir}" ]; then
-	    echo "$0: DATA-FILE(${_data_file}) is not at somewhere under ROOT(${root_dir})" 1>&2
+    elif [ -n "${root}" ]; then
+	local prefix=${_data_file:0:${#root}}
+	if [ "$prefix" != "${root}" ]; then
+	    echo "$0: DATA-FILE(${_data_file}) is not at somewhere under ROOT(${root})" 1>&2
 	    exit 2
 	fi
-	path=${_data_file:${#root_dir}}
+	path=${_data_file:${#root}}
 	if ! [ -f "$path" ]; then
-	    echo "$0: no such file: $path derived from ROOT(${root_dir} and DATA-FILE(${_data_file})" 1>&2
+	    echo "$0: no such file: $path derived from ROOT(${root} and DATA-FILE(${_data_file})" 1>&2
 	    exit 2
 	fi
 	_path=${path}
