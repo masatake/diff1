@@ -125,8 +125,13 @@ function parse_arguments
 	echo "$0: no such file: $_data_file" 1>&2
 	exit 2
     fi
-    if ! [ -f $_data_file ]; then
-	echo "$0: not a regular file: $_data_file" 1>&2
+
+    if [ -f $_data_file ]; then
+	:
+    elif [ -d $_data_file ]; then
+	:
+    else
+	echo "$0: not a regular file nor a directory: $_data_file" 1>&2
 	exit 2
     fi
     if ! [ -r $_data_file ]; then
@@ -135,7 +140,7 @@ function parse_arguments
     fi
 
     if [ -z "$diff_flags" ]; then
-	diff_flags=-uN
+	diff_flags=-ruN
     fi
 
     if [ -n "${path}" ]; then
@@ -147,8 +152,12 @@ function parse_arguments
 	    exit 2
 	fi
 	path=${_data_file:${#root}}
-	if ! [ -f "$path" ]; then
-	    echo "$0: no such file: $path derived from ROOT(${root} and DATA-FILE(${_data_file})" 1>&2
+	if [ -f "$path" ]; then
+	    :
+	elif [ -d "$path" ]; then
+	    :
+	else
+	    echo "$0: no such file or directory: $path derived from ROOT(${root} and DATA-FILE(${_data_file})" 1>&2
 	    exit 2
 	fi
 	_path=${path}
@@ -210,7 +219,7 @@ function rpm_report_diff
 	return 2
     fi
 
-    if ! [ -f $temp/$path ]; then
+    if ! [ -e $temp/$path ]; then
 	echo "cannot find $file in rpm archive($pkg_file)" 1>&2
 	return 2
     fi
