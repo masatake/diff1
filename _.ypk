@@ -1,5 +1,5 @@
 (ypack-name "diff1")
-(ypack-version "0.0.1")
+(ypack-version "0.0.2")
 (ypack-require "rpm")
 (ypack-require "yum-utils")
 (ypack-require "coreutils")
