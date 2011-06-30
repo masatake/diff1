@@ -46,7 +46,7 @@ function print_usage
     echo "	$0 [--yumdownloader-flags=YUMDOWNLOADER_FLAGS] [--diff-flags=DIFF_FLAGS] \\"
     echo "         [--rpm-ignore-vr] [--rpm-file=RPM_FILE] DATA_FILE"
     echo "	$0 [--yumdownloader-flags=YUMDOWNLOADER_FLAGS] [--diff-flags=DIFF_FLAGS] \\"
-    echo "         [--rpm-ignore-vr] [--rpm-file=RPM_FILE] [--list|-l] DATA_DIR"
+    echo "         [--rpm-ignore-vr] [--rpm-file=RPM_FILE] [--just-list|-l] DATA_DIR"
     echo "	$0 [--yumdownloader-flags=YUMDOWNLOADER_FLAGS] [--diff-flags=DIFF_FLAGS] \\"
     echo "         [--rpm-ignore-vr] [--rpm-file=RPM_FILE] --path=PATH|--root=ROOT DATA_{FILE|DIRECTORY}"
     echo "Example: "
@@ -323,9 +323,9 @@ function rpm_resolve_pkg
     local pkg_name=$1
     local output=
 
-    if ! output=$(yumdownloader ${yumdownloader_flags} 
-	    --quiet
-	    --urls $pkg_name 2> /dev/null); then
+    if ! output=$(yumdownloader ${yumdownloader_flags} \
+	            --quiet                            \
+	            --urls $pkg_name 2> /dev/null); then
 	return 2
     fi
 
