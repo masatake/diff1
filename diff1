@@ -215,8 +215,8 @@ function rpm_report_diff
 	return 2
     fi
 
-    echo " # diff ${diff_flags} $temp/$path $file "
-    diff ${diff_flags} $temp/$path $file 
+    echo " # diff ${diff_flags} ${temp}${path} $file "
+    diff ${diff_flags} ${temp}${path} $file 
     status=$?
     if [ $status = 0 ]; then
 	if [ "${path}" = "${file}" ]; then
