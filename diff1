@@ -29,6 +29,7 @@ __cache_dir=
 
 _data_file=
 _path=
+__package=
 
 pkg_backend=rpm
 reporter=diff
@@ -50,6 +51,8 @@ function print_usage
     echo "         [--rpm-ignore-vr] [--rpm-file=RPM_FILE] [--just-list|-l] [--mtime] DATA_DIR"
     echo "	$0 [--yumdownloader-flags=YUMDOWNLOADER_FLAGS] [--diff-flags=DIFF_FLAGS] \\"
     echo "         [--rpm-ignore-vr] [--rpm-file=RPM_FILE] [--mtime] --path=PATH|--root=ROOT DATA_{FILE|DIRECTORY}"
+    echo "	$0 [--yumdownloader-flags=YUMDOWNLOADER_FLAGS] [--diff-flags=DIFF_FLAGS] \\"
+    echo "         [--rpm-ignore-vr] [--rpm-file=RPM_FILE] [--mtime] --package=PACKAGE"
     echo
     echo "List Notation:"
     echo "      M --- Modified managed by rpm"
@@ -68,7 +71,7 @@ function parse_arguments
     local df
     local ydf
     local path
-    
+
     while [ $# -gt 0 ]; do
 	case "$1" in
 	    -h|--help)
@@ -113,12 +116,23 @@ function parse_arguments
 	     --mtime)
 	        mtime=yes
 		;;
+	    --package=*)
+	        __package=${1/--package=}
+		if ! rpm -qi "${__package}" > /dev/null 2>&1; then
+		    echo "$0: so such package" 1>&21
+		    exit 2
+		fi
+		;;
 	    *)
 		break
 		;;
 	esac
 	shift
     done
+
+    if [ -n "${__package}" ]; then
+	return
+    fi
 
     if [ $# = 0 ]; then
 	echo "$0: missing file" 1>&2
@@ -201,13 +215,44 @@ function prepare_cache_dir
     ${pkg_backend}_prepare_cache_dir $__cache_dir
 }
 
+function diff1_package
+{
+    local package=$1
+    shift 1
+
+    local files
+    local status=0
+    
+    files=(`rpm -V ${package} | grep "^..5......    " | sed -e 's/..5......    \(.\+\)/\1/'`)
+    for f in ${files[*]}; do
+	$0 "$@" "${f}"
+	case $? in
+	    0)
+		:
+		;;
+	    1)
+		status=1
+		;;
+	    2)
+		return 2
+		;;
+	esac
+    done
+
+    return $status
+}
 function main
 {
     parse_arguments "$@"
 
     prepare_cache_dir
     
-    ${pkg_backend}_diff1 $_data_file $_path
+    if [ -z "${__package}" ]; then
+	${pkg_backend}_diff1 $_data_file $_path
+    else
+	diff1_package ${__package} ${*/--package=*}
+    fi
+    
     return $?
 }
 

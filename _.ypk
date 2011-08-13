@@ -1,8 +1,9 @@
 (ypack-name "diff1")
-(ypack-version "0.0.5")
+(ypack-version "0.0.6")
 (ypack-require "rpm")
 (ypack-require "yum-utils")
 (ypack-require "coreutils")
 (ypack-require "diffutils")
+(ypack-require "sed")
 (ypack-entry "diff1" "/usr/bin/diff1")
 
