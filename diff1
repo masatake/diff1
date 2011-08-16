@@ -55,7 +55,7 @@ function print_usage
     echo "         [--rpm-ignore-vr] [--rpm-file=RPM_FILE] --package=PACKAGE"
     echo
     echo "List Notation:"
-    echo "      M --- Modified managed by rpm"
+    echo "	M --- Modified managed by rpm"
     echo "	- --- Not modified, managed by rpm"
     echo "	B --- Backup file taken by rpm"
     echo "	X --- External, not managed by rpm"
