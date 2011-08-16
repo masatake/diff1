@@ -1,5 +1,7 @@
 2011-08-16  Masatake YAMATO  <yamato@redhat.com>
 
+	* _.ypk: Added url.
+
 	* diff1 (mtime): Don't use it when --package mode.
 	(print_usage): Added more examples.
 	(parse_arguments): Use # as prefix for some of error messages.
