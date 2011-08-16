@@ -1,0 +1,11 @@
+2011-08-16  Masatake YAMATO  <yamato@redhat.com>
+
+	* diff1 (mtime): Don't use it when --package mode.
+	(print_usage): Added more examples.
+	(parse_arguments): Use # as prefix for some of error messages.
+	(diff1_package): Use rpm -ql to get the list of files in a package.
+	(diff1_package): Don't abort even if child diff1 returns 2.
+	(rpm_report_diff): Use # as prefix for some of error messages.
+	(rpm_retrieve_pkg): Pick only the first package in the packages list
+	for a given file.
+

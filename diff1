@@ -52,7 +52,7 @@ function print_usage
     echo "	$0 [--yumdownloader-flags=YUMDOWNLOADER_FLAGS] [--diff-flags=DIFF_FLAGS] \\"
     echo "         [--rpm-ignore-vr] [--rpm-file=RPM_FILE] [--mtime] --path=PATH|--root=ROOT DATA_{FILE|DIRECTORY}"
     echo "	$0 [--yumdownloader-flags=YUMDOWNLOADER_FLAGS] [--diff-flags=DIFF_FLAGS] \\"
-    echo "         [--rpm-ignore-vr] [--rpm-file=RPM_FILE] [--mtime] --package=PACKAGE"
+    echo "         [--rpm-ignore-vr] [--rpm-file=RPM_FILE] --package=PACKAGE"
     echo
     echo "List Notation:"
     echo "      M --- Modified managed by rpm"
@@ -62,6 +62,9 @@ function print_usage
     echo
     echo "Example: "
     echo "	$0 /etc/passwd"
+    echo "	$0 --just-list /etc/sysconfig"
+    echo "	$0 /etc/sysconfig"
+    echo "	$0 --package=setup"
     echo "	$0 --root=/home/yamato/work/named /home/yamato/work/named/etc/named.conf"
     echo "	$0 --path=/etc/passwd /home/yamato/work/setup/my-passwd"
 }
@@ -174,11 +177,11 @@ function parse_arguments
     elif [ -d $_data_file ]; then
 	:
     else
-	echo "$0: not a regular file nor a directory: $_data_file" 1>&2
+	echo " $0: not a regular file nor a directory: $_data_file" 1>&2
 	exit 2
     fi
     if ! [ -r $_data_file ]; then
-	echo "$0: no readable: $_data_file" 1>&2
+	echo " # $0: no readable: $_data_file" 1>&2
 	exit 2
     fi
 
@@ -223,7 +226,8 @@ function diff1_package
     local files
     local status=0
     
-    files=(`rpm -V ${package} | grep "^..5......    " | sed -e 's/..5......    \(.\+\)/\1/'`)
+    # files=(`rpm -V ${package} | grep "^..5.........." | sed -e 's/..5..........\(.\+\)/\1/'`)
+    files=(`rpm -ql ${package}`)
     for f in ${files[*]}; do
 	$0 "$@" "${f}"
 	case $? in
@@ -231,10 +235,14 @@ function diff1_package
 		:
 		;;
 	    1)
-		status=1
+# TODO
+		if [ "$status" = 0 ]; then
+		    status=1
+		fi
 		;;
 	    2)
-		return 2
+#		return 2
+		status=2
 		;;
 	esac
     done
@@ -316,7 +324,7 @@ function rpm_report_diff
     fi
 
     if ! [ -e $temp/$path ]; then
-	echo "cannot find $file in rpm archive($pkg_file)" 1>&2
+	echo " # cannot find $file in rpm archive($pkg_file)" 1>&2
 	return 2
     fi
 
@@ -431,7 +439,9 @@ function rpm_retrieve_pkg
 	return 2
     fi
 
-    if ! pkg=$(rpm -qf $file); then
+    # head 1 is needed to handle the case that $file is shared 
+    # by more than two packages.
+    if ! pkg=$(rpm -qf $file | head -1); then
 	echo "$0: rpm does not manage $file" 1>&2
 	return 2
     fi
