@@ -83,7 +83,7 @@ function V
 
 function main
 {
-    local r
+    local r=
     
     while [[ $# -gt 0 ]]; do
 	case "$1" in
@@ -91,18 +91,18 @@ function main
 		print_usage
 		exit 0
 		;;
-            --qa)
+            -qa)
 		qa
 		r=$?
 		break
 		;;
-	    --qf)
+	    -qf)
 		shift
 		qf $1
 		r=$?
 		break
 		;;
-	    --ql)
+	    -ql)
 		shift
 		ql $1
 		r=$?
@@ -121,6 +121,12 @@ function main
 		;;
 	esac
     done
+
+    if [[ -z "$r" ]]; then
+	print_usage 1>&2
+	r=2
+    fi
+    
     return $?
 }
 
