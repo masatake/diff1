@@ -1,7 +1,11 @@
+2011-09-06  Masatake YAMATO  <yamato@redhat.com>
+
+	* diff1: Rename --just-list to list.
+
 2011-09-05  Masatake YAMATO  <yamato@redhat.com>
 
 	* _.ypk: version 0.0.10.
-	
+
 	* diff1: Added --quiet option.
 
 2011-09-05  Masatake YAMATO  <yamato@redhat.com>

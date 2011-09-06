@@ -47,7 +47,7 @@ function print_usage
     echo "Usage: "
     echo "	$0 --help|-h"
     echo "	$0  [--mtime] DATA_FILE"
-    echo "	$0  [--just-list|-l] [--mtime] DATA_DIR"
+    echo "	$0  [--list|-l] [--mtime] DATA_DIR"
     echo "	$0  [--mtime] --path=PATH|--root=ROOT DATA_{FILE|DIRECTORY}"
     echo "	$0  --package=PACKAGE"
     echo
@@ -66,7 +66,7 @@ function print_usage
     echo
     echo "Example: "
     echo "	$0 /etc/passwd"
-    echo "	$0 --just-list /etc/sysconfig"
+    echo "	$0 --list /etc/sysconfig"
     echo "	$0 /etc/sysconfig"
     echo "	$0 --package=setup"
     echo "	$0 --root=/home/yamato/work/named /home/yamato/work/named/etc/named.conf"
@@ -117,7 +117,7 @@ function parse_arguments
 		    exit 2
 		fi
 		;;
-	     -l|--just-list)
+	     -l|--list)
 	        list=yes
 		;;
 	     --mtime)
