@@ -1,5 +1,5 @@
 (ypack-name "diff1")
-(ypack-version "0.0.10")
+(ypack-version "0.0.11")
 (ypack-license "GPLv3+")
 (ypack-url "https://github.com/masatake/diff1")
 (ypack-require "rpm")

@@ -450,13 +450,14 @@ function rpm_retrieve_pkg
 	return 2
     fi
 
-    # head 1 is needed to handle the case that $file is shared 
-    # by more than two packages.
-    if ! pkg=$(rpm -qf $file | head -1); then
+    if ! pkg=$(rpm -qf $file); then
 	echo "$0: rpm does not manage $file" 1>&2
 	return 2
     fi
 
+    # head 1 is needed to handle the case that $file is shared 
+    # by more than two packages.
+    pkg=$(head -1<<<"$pkg")
 
     if rpm_prepare_cache $pkg ; then
 	echo $__cache_dir/rpm/${pkg}.rpm
