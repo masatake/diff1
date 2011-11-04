@@ -126,7 +126,7 @@ function parse_arguments
 	    --package=*)
 	        __package=${1/--package=}
 		if ! rpm -qi "${__package}" > /dev/null 2>&1; then
-		    echo "$0: so such package" 1>&21
+		    echo "$0: no such package" 1>&2
 		    exit 2
 		fi
 		;;
