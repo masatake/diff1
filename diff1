@@ -40,29 +40,33 @@ rpm_file=
 root=
 list=
 mtime=
+quiet=
 
 function print_usage
 {
     echo "Usage: "
     echo "	$0 --help|-h"
-    echo "	$0 [--yumdownloader-flags=YUMDOWNLOADER_FLAGS] [--diff-flags=DIFF_FLAGS] \\"
-    echo "         [--rpm-ignore-vr] [--rpm-file=RPM_FILE] [--mtime] DATA_FILE"
-    echo "	$0 [--yumdownloader-flags=YUMDOWNLOADER_FLAGS] [--diff-flags=DIFF_FLAGS] \\"
-    echo "         [--rpm-ignore-vr] [--rpm-file=RPM_FILE] [--just-list|-l] [--mtime] DATA_DIR"
-    echo "	$0 [--yumdownloader-flags=YUMDOWNLOADER_FLAGS] [--diff-flags=DIFF_FLAGS] \\"
-    echo "         [--rpm-ignore-vr] [--rpm-file=RPM_FILE] [--mtime] --path=PATH|--root=ROOT DATA_{FILE|DIRECTORY}"
-    echo "	$0 [--yumdownloader-flags=YUMDOWNLOADER_FLAGS] [--diff-flags=DIFF_FLAGS] \\"
-    echo "         [--rpm-ignore-vr] [--rpm-file=RPM_FILE] --package=PACKAGE"
+    echo "	$0  [--mtime] DATA_FILE"
+    echo "	$0  [--list|-l] [--mtime] DATA_DIR"
+    echo "	$0  [--mtime] --path=PATH|--root=ROOT DATA_{FILE|DIRECTORY}"
+    echo "	$0  --package=PACKAGE"
+    echo
+    echo "COMMON OPTIONS: "
+    echo "	[--yumdownloader-flags=YUMDOWNLOADER_FLAGS]"
+    echo "	[--diff-flags=DIFF_FLAGS]"
+    echo "	[--rpm-ignore-vr]"
+    echo "	[--rpm-file=RPM_FILE]"
+    echo "	[--quiet]"
     echo
     echo "List Notation:"
-    echo "      M --- Modified managed by rpm"
+    echo "	M --- Modified managed by rpm"
     echo "	- --- Not modified, managed by rpm"
     echo "	B --- Backup file taken by rpm"
     echo "	X --- External, not managed by rpm"
     echo
     echo "Example: "
     echo "	$0 /etc/passwd"
-    echo "	$0 --just-list /etc/sysconfig"
+    echo "	$0 --list /etc/sysconfig"
     echo "	$0 /etc/sysconfig"
     echo "	$0 --package=setup"
     echo "	$0 --root=/home/yamato/work/named /home/yamato/work/named/etc/named.conf"
@@ -113,7 +117,7 @@ function parse_arguments
 		    exit 2
 		fi
 		;;
-	     -l|--just-list)
+	     -l|--list)
 	        list=yes
 		;;
 	     --mtime)
@@ -122,9 +126,12 @@ function parse_arguments
 	    --package=*)
 	        __package=${1/--package=}
 		if ! rpm -qi "${__package}" > /dev/null 2>&1; then
-		    echo "$0: so such package" 1>&21
+		    echo "$0: no such package" 1>&2
 		    exit 2
 		fi
+		;;
+	    --quiet)
+	        quiet=1
 		;;
 	    *)
 		break
@@ -229,6 +236,10 @@ function diff1_package
     # files=(`rpm -V ${package} | grep "^..5.........." | sed -e 's/..5..........\(.\+\)/\1/'`)
     files=(`rpm -ql ${package}`)
     for f in ${files[*]}; do
+
+	if [[ -d "$f" ]]; then
+	    continue
+	fi
 	$0 "$@" "${f}"
 	case $? in
 	    0)
@@ -258,7 +269,7 @@ function main
     if [ -z "${__package}" ]; then
 	${pkg_backend}_diff1 $_data_file $_path
     else
-	diff1_package ${__package} ${*/--package=*}
+	diff1_package "${__package}" ${*/--package=*}
     fi
     
     return $?
@@ -338,9 +349,9 @@ function rpm_report_diff
 	status=$?
 	if [ $status = 0 ]; then
 	    if [ "${path}" = "${file}" ]; then
-		echo " # NO CHANGE in $file"
+		[ -z "$quiet" ] && echo " # NO CHANGE in $file"
 	    else
-		echo " # NO CHANGE in $path -> $file"
+		[ -z "$quiet" ] && echo " # NO CHANGE in $path -> $file"
 	    fi
 	fi
     elif [ "$list" = yes ]; then
@@ -439,13 +450,14 @@ function rpm_retrieve_pkg
 	return 2
     fi
 
-    # head 1 is needed to handle the case that $file is shared 
-    # by more than two packages.
-    if ! pkg=$(rpm -qf $file | head -1); then
+    if ! pkg=$(rpm -qf $file); then
 	echo "$0: rpm does not manage $file" 1>&2
 	return 2
     fi
 
+    # head 1 is needed to handle the case that $file is shared 
+    # by more than two packages.
+    pkg=$(head -1<<<"$pkg")
 
     if rpm_prepare_cache $pkg ; then
 	echo $__cache_dir/rpm/${pkg}.rpm
