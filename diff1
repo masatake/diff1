@@ -161,7 +161,7 @@ function parse_arguments
     fi
     
     _data_file=$1
-    _path="$_data_file"
+    _path=$(readlink --canonicalize "$_data_file")
     shift
     
     if ! [ -e $_data_file ]; then
@@ -190,7 +190,7 @@ function parse_arguments
     fi
 
     if [ -n "${path}" ]; then
-	_path=${path}
+	_path=$(readlink --canonicalize ${path})
     elif [ -n "${root}" ]; then
 	local prefix=${_data_file:0:${#root}}
 	if [ "$prefix" != "${root}" ]; then
@@ -206,7 +206,7 @@ function parse_arguments
 	    echo "$0: no such file or directory: $path derived from ROOT(${root} and DATA-FILE(${_data_file})" 1>&2
 	    exit 2
 	fi
-	_path=${path}
+	_path=$(readlink --canonicalize ${path})
     fi
 }
 

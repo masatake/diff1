@@ -1,3 +1,8 @@
+2011-12-01  Masatake YAMATO  <yamato@redhat.com>
+
+	* diff1 (parse_arguments): Use readlink to canonicalizing
+	path.
+
 2011-08-16  Masatake YAMATO  <yamato@redhat.com>
 
 	* _.ypk: Added url.
