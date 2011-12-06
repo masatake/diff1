@@ -438,6 +438,11 @@ function rpm_resolve_pkg
     basename $output .rpm
 }
 
+function count
+{
+    return $#
+}
+
 function rpm_retrieve_pkg
 {
     local file=$1
@@ -455,9 +460,26 @@ function rpm_retrieve_pkg
 	return 2
     fi
 
-    # head 1 is needed to handle the case that $file is shared 
-    # by more than two packages.
-    pkg=$(head -1<<<"$pkg")
+    # 
+    # handling the case that $file is shared by more than two packages.
+    # Needs more work.
+    #
+    local p p0 f0
+    count $pkg
+    if [ $? -gt 1 ]; then
+	while read p0 f0; do
+	    if [ -z "$f0" ]; then
+		p=$p0
+		break
+	    fi
+	done < <(rpm -q --queryformat "%{NAME} %{FILEFLAGS:fflags}\n" -f $file)
+	if [ -z "$p" ]; then
+	    pkg=$(head -1<<<"$pkg")
+	else
+	    pkg=$(grep $p<<<"$pkg")
+	fi
+    fi
+
 
     if rpm_prepare_cache $pkg ; then
 	echo $__cache_dir/rpm/${pkg}.rpm

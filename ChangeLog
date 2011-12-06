@@ -1,3 +1,10 @@
+2011-12-06  Masatake YAMATO  <yamato@redhat.com>
+
+	* _.ypk: version 0.0.13.
+
+	* diff1 (rpm_retrieve_pkg): Check fflags when a file
+	is by more than two packages.
+
 2011-12-01  Masatake YAMATO  <yamato@redhat.com>
 
 	* diff1 (parse_arguments): Use readlink to canonicalizing
