@@ -2,7 +2,7 @@
 #
 ########################################################################
 #
-# opm: overlay package manager
+# opm: overrides-package manager
 #
 # Copyright (C) 2011 Masatake YAMATO
 #
@@ -26,7 +26,7 @@
 ## Commentary:
 #
 # This package provides the similar functions of rpm -qa, rpm -qf, rpm -ql 
-# and -V against overlay packages created by packagemaker.
+# and -V against overrides packages created by packagemaker.
 #
 
 function print_usage
