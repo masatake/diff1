@@ -41,6 +41,7 @@ root=
 list=
 mtime=
 quiet=
+ignore_overrides=
 
 function print_usage
 {
@@ -132,6 +133,9 @@ function parse_arguments
 		;;
 	    --quiet)
 	        quiet=1
+		;;
+	    --ignore-overrides)
+	        ignore_overrides=1
 		;;
 	    *)
 		break
@@ -264,9 +268,14 @@ function main
 {
     parse_arguments "$@"
 
-    prepare_cache_dir
     
     if [ -z "${__package}" ]; then
+	if [ -z "${ignore_overrides}" ] && opm -qf $_path > /dev/null 2>&1; then
+	    pkg_backend=opm
+	else
+	    pkg_backend=rpm
+	fi
+	prepare_cache_dir
 	${pkg_backend}_diff1 $_data_file $_path
     else
 	diff1_package "${__package}" ${*/--package=*}
@@ -532,6 +541,41 @@ function rpm_prepare_cache_dir
 }
 
 
+#
+# OPM
+# 
+function opm_build_path 
+{
+    local pkg=$1
+    local path=$2
+    
+    echo "/var/lib/${pkg}/new$path"
+}
+
+function opm_diff1
+{
+    local file=$1
+    local path=$2
+    local pkg
+
+    pkg=$(opm -qf $path)
+    opm_report_${reporter} $(opm_build_path "$pkg" "$path") $file
+    return $?
+}
+
+function opm_report_diff
+{
+    local old=$1
+    local new=$2
+
+    mydiff ${diff_flags} "$old" "$new"
+    return $?
+}
+
+function opm_prepare_cache_dir
+{
+    return 0
+}
 
 main "$@"
 exit $?
