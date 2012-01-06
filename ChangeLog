@@ -1,4 +1,9 @@
-2011-12-08  Masatake YAMATO  <jet@kurokoya.shokupan>
+2012-01-06  Masatake YAMATO  <yamato@redhat.com>
+
+	* opm (main): Retrun $r instead of $?.
+	Reported by ssato.
+
+2011-12-08  Masatake YAMATO  <yamato@redhat.com>
 
 	* diff1 (opm*): Handle overrides-package.
 
