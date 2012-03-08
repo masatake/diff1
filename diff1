@@ -271,7 +271,7 @@ function main
 
     if [ -z "${__package}" ]; then
 	if [ -z "${ignore_overrides}" ]; then
-	    if which opm > /dev/null 2>&1; then
+	    if ! which opm > /dev/null 2>&1; then
 		echo "cannot find opm command" 1>&2
 		exit 2
 	    fi

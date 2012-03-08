@@ -1,3 +1,15 @@
+2012-03-08  Masatake YAMATO  <yamato@redhat.com>
+
+	* _.ypk: version 0.0.17.
+
+	* diff1 (ignore_overrides): Added missing `!'.
+
+2012-03-08  Masatake YAMATO  <yamato@redhat.com>
+
+	* _.ypk: version 0.0.16.
+
+	* diff1 (ignore_overrides): Added missing `;'.
+
 2012-01-10  Masatake YAMATO  <yamato@redhat.com>
 
 	* diff1 (main): Handle the case
