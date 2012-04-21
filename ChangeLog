@@ -1,3 +1,11 @@
+2012-04-21  Masatake YAMATO  <yamato@redhat.com>
+
+	* _.ypk (ypack-version): 0.0.18.
+
+	* diff1 (ignore_overrides): Use absolute
+	path for _data_file and _path.
+	Use -ru as diff option when comparing files.
+
 2012-03-08  Masatake YAMATO  <yamato@redhat.com>
 
 	* _.ypk: version 0.0.17.

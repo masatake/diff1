@@ -170,11 +170,13 @@ function parse_arguments
 	echo "Don't combine --path and --list option" 1>&2
 	exit 2
     fi
-    
+
     _data_file=$1
-    _path=$(readlink --canonicalize "$_data_file")
     shift
-    
+    if [ -z "${_data_file}" ]; then
+	echo "Empty string is given as argument for _data_file" 1>&2
+	exit 2
+    fi
     if ! [ -e $_data_file ]; then
 	echo "$0: no such file: $_data_file" 1>&2
 	exit 2
@@ -185,19 +187,27 @@ function parse_arguments
 	    echo "Don't use -l|--list option with a file" 1>&2
 	    exit 2
 	fi
+	if [ -z "$diff_flags" ]; then
+	    diff_flags=-ru
+	fi
     elif [ -d $_data_file ]; then
-	:
+	if [ -z "$diff_flags" ]; then
+	    diff_flags=-ruN
+	fi
     else
 	echo " $0: not a regular file nor a directory: $_data_file" 1>&2
 	exit 2
     fi
+
     if ! [ -r $_data_file ]; then
 	echo " # $0: no readable: $_data_file" 1>&2
 	exit 2
     fi
 
-    if [ -z "$diff_flags" ]; then
-	diff_flags=-ruN
+    if [ ${_data_file:0:1} != "/" ]; then
+	_data_file=$(readlink --canonicalize "$(pwd)/${_data_file}")
+    else
+	_data_file=$(readlink --canonicalize "$_data_file")
     fi
 
     if [ -n "${path}" ]; then
@@ -218,6 +228,8 @@ function parse_arguments
 	    exit 2
 	fi
 	_path=$(readlink --canonicalize ${path})
+    else
+	_path="${_data_file}"
     fi
 }
 
