@@ -4,6 +4,7 @@
 	when rpm downloading is failed.
 	(rpm_diff1): Handle the result of rpm_retrieve_pkg
 	correctly.
+	(diff1_package): Report unknown files.
 
 2012-04-21  Masatake YAMATO  <yamato@redhat.com>
 

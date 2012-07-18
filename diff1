@@ -249,11 +249,20 @@ function diff1_package
     local files
     local status=0
     
+    local f
+    local xf
+
+
     # files=(`rpm -V ${package} | grep "^..5.........." | sed -e 's/..5..........\(.\+\)/\1/'`)
     files=(`rpm -ql ${package}`)
     for f in ${files[*]}; do
 
 	if [[ -d "$f" ]]; then
+	    for xf in $(find "$f"); do
+		if ! rpm -qf $xf > /dev/null 2>&1; then
+		    echo " # UNKNOWN FILE: " $xf
+		fi
+	    done
 	    continue
 	fi
 	$0 "$@" "${f}"
