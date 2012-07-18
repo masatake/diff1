@@ -1,3 +1,10 @@
+2012-07-19  Masatake YAMATO  <yamato@redhat.com>
+
+	* diff1 (diff1_package): Abort immediately
+	when rpm downloading is failed.
+	(rpm_diff1): Handle the result of rpm_retrieve_pkg
+	correctly.
+
 2012-04-21  Masatake YAMATO  <yamato@redhat.com>
 
 	* _.ypk (ypack-version): 0.0.18.

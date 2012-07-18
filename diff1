@@ -262,14 +262,13 @@ function diff1_package
 		:
 		;;
 	    1)
-# TODO
 		if [ "$status" = 0 ]; then
 		    status=1
 		fi
 		;;
 	    2)
-#		return 2
 		status=2
+		break
 		;;
 	esac
     done
@@ -313,15 +312,21 @@ function main
 function rpm_prepare_cache
 {
     local pkg=$1
+    local c=$__cache_dir/rpm/${pkg}.rpm
+    local r
 
-    if [ -r $__cache_dir/rpm/${pkg}.rpm ]; then
+    if [ -r $c ]; then
 	return 0
     else
-	yumdownloader ${yumdownloader_flags} --destdir $__cache_dir/rpm $pkg
-	return $?
+	yumdownloader ${yumdownloader_flags} --destdir $__cache_dir/rpm $pkg > /dev/null 2>&1
+	r=$?
+	if [[ $r != 0 ]]; then
+	    rm $c
+	fi
+	return $r
     fi
 
-} > /dev/null 2>&1
+} 
 
 function mydiff
 {
@@ -547,8 +552,10 @@ function rpm_diff1
     if [ -n "${rpm_file}" ]; then
 	pkg_file=${rpm_file}
     else
-	if ! pkg_file=$(rpm_retrieve_pkg $path $rpm_ignore_vr); then
-	    return $?
+	if pkg_file=$(rpm_retrieve_pkg $path $rpm_ignore_vr); then
+	    :
+	else
+	    return 2
 	fi
     fi
     rpm_report_${reporter} $pkg_file $file $path
