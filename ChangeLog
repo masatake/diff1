@@ -5,6 +5,8 @@
 	(rpm_diff1): Handle the result of rpm_retrieve_pkg
 	correctly.
 	(diff1_package): Report unknown files.
+	(__track_unknown_entities): New variable.
+	(rpm_report_diff): Use === as prefix for extra information.
 
 2012-04-21  Masatake YAMATO  <yamato@redhat.com>
 
