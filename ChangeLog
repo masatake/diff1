@@ -1,3 +1,7 @@
+2012-07-23  Masatake YAMATO  <yamato@redhat.com>
+
+	* diff1 (rpm_report_diff): Remove tmp dir
+
 2012-07-19  Masatake YAMATO  <yamato@redhat.com>
 
 	* diff1 (diff1_package): Abort immediately

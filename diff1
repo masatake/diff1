@@ -388,6 +388,7 @@ function rpm_report_diff
 	echo "$0 failed in mktemp" 1>&2
 	return 2
     fi
+    trap "cd /tmp; chmod -R u+w $temp; /bin/rm -rf $temp" 0    
 
     if ! rpm2cpio $pkg_file | ( cd $temp; cpio -dim ) > /dev/null 2>&1; then
 	echo "failed in rpm2cpio/cpio" 1>&2
