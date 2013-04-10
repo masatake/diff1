@@ -1,4 +1,11 @@
+2013-04-11  Masatake YAMATO  <yamato@redhat.com>
+
+	* diff1 (ignore_overrides): Check the size of cache file
+	before using it.
+
 2012-07-23  Masatake YAMATO  <yamato@redhat.com>
+
+	* _.ypk (ypack-version): version 0.0.19.
 
 	* diff1 (rpm_report_diff): Remove tmp dir
 

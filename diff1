@@ -340,7 +340,7 @@ function rpm_prepare_cache
     local c=$__cache_dir/rpm/${pkg}.rpm
     local r
 
-    if [ -r $c ]; then
+    if [[ -s $c && -r $c ]]; then
 	return 0
     else
 	yumdownloader ${yumdownloader_flags} --destdir $__cache_dir/rpm $pkg > /dev/null 2>&1
