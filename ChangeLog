@@ -2,6 +2,8 @@
 
 	* diff1 (ignore_overrides): Check the size of cache file
 	before using it.
+	(ignore_overrides): Remove duplicated code. Don't remove
+	temporary file directly. It is handled in trap.
 
 2012-07-23  Masatake YAMATO  <yamato@redhat.com>
 

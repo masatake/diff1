@@ -482,8 +482,6 @@ function rpm_report_diff
 	done
     fi
 
-    chmod -R u+w $temp
-    rm -rf $temp
     return $status
 }
 
