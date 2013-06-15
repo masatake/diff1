@@ -1,3 +1,8 @@
+2013-06-15  Masatake YAMATO  <yamato@redhat.com>
+
+	* diff1 (rpm_prepare_cache): Check the size of
+	cache file just after downloading.
+
 2013-04-11  Masatake YAMATO  <yamato@redhat.com>
 
 	* diff1 (ignore_overrides): Check the size of cache file

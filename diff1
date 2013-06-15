@@ -340,6 +340,7 @@ function rpm_prepare_cache
     local c=$__cache_dir/rpm/${pkg}.rpm
     local r
 
+    # yumdownloader returns 0 even if it fails downloading.
     if [[ -s $c && -r $c ]]; then
 	return 0
     else
@@ -347,8 +348,12 @@ function rpm_prepare_cache
 	r=$?
 	if [[ $r != 0 ]]; then
 	    rm $c
+	elif ! [[ -s $c ]]; then
+	    rm $c
+	    return 1
+	else
+	    return $r
 	fi
-	return $r
     fi
 
 } 
