@@ -42,7 +42,6 @@ root=
 list=
 mtime=
 quiet=
-ignore_overrides=
 
 function print_usage
 {
@@ -134,9 +133,6 @@ function parse_arguments
 		;;
 	    --quiet)
 	        quiet=1
-		;;
-	    --ignore-overrides)
-	        ignore_overrides=1
 		;;
 	    --track-unknown-entities|-t)
 		__track_unknown_entities=yes
@@ -303,20 +299,7 @@ function main
 
 
     if [ -z "${__package}" ]; then
-	if [ -z "${ignore_overrides}" ]; then
-	    if ! which opm > /dev/null 2>&1; then
-		echo "cannot find opm command" 1>&2
-		exit 2
-	    fi
-	    if opm -qf $_path > /dev/null 2>&1; then
-		pkg_backend=opm
-	    else
-		pkg_backend=rpm
-	    fi
-	    
-	else
-	    pkg_backend=rpm
-	fi
+	pkg_backend=rpm
 	prepare_cache_dir
 	${pkg_backend}_diff1 $_data_file $_path
     else
@@ -597,43 +580,6 @@ function rpm_diff1
 function rpm_prepare_cache_dir
 {
     mkdir -p $__cache_dir/rpm
-}
-
-
-#
-# OPM
-# 
-function opm_build_path 
-{
-    local pkg=$1
-    local path=$2
-    
-    echo "/var/lib/${pkg}/new$path"
-}
-
-function opm_diff1
-{
-    local file=$1
-    local path=$2
-    local pkg
-
-    pkg=$(opm -qf $path)
-    opm_report_${reporter} $(opm_build_path "$pkg" "$path") $file
-    return $?
-}
-
-function opm_report_diff
-{
-    local old=$1
-    local new=$2
-
-    mydiff ${diff_flags} "$old" "$new"
-    return $?
-}
-
-function opm_prepare_cache_dir
-{
-    return 0
 }
 
 main "$@"
