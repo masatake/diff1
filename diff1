@@ -57,7 +57,7 @@ function print_usage
     echo "	[--diff-flags=DIFF_FLAGS]"
     echo "	[--rpm-ignore-vr]"
     echo "	[--rpm-file=RPM_FILE]"
-    echo "	[--quiet]"
+    echo "	[--quiet|-q]"
     echo
     echo "List Notation:"
     echo "	M --- Modified managed by rpm"
@@ -131,7 +131,7 @@ function parse_arguments
 		    exit 2
 		fi
 		;;
-	    --quiet)
+	    --quiet|-q)
 	        quiet=1
 		;;
 	    --track-unknown-entities|-t)
