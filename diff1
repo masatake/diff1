@@ -327,7 +327,7 @@ function rpm_prepare_cache
     if [[ -s $c && -r $c ]]; then
 	return 0
     else
-	yumdownloader ${yumdownloader_flags} --destdir $__cache_dir/rpm $pkg > /dev/null 2>&1
+	dnf download ${yumdownloader_flags} --destdir $__cache_dir/rpm $pkg > /dev/null 2>&1
 	r=$?
 	if [[ $r != 0 ]]; then
 	    rm $c
@@ -478,7 +478,7 @@ function rpm_resolve_pkg
     local pkg_name=$1
     local output=
 
-    if ! output=$(yumdownloader ${yumdownloader_flags} \
+    if ! output=$(dnf download ${yumdownloader_flags} \
 	            --quiet                            \
 	            --urls $pkg_name 2> /dev/null); then
 	return 2
